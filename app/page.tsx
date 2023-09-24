@@ -1,95 +1,118 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+"use client";
 
-export default function Home() {
+import React, { useState } from "react";
+import { useReactMediaRecorder } from "react-media-recorder";
+import { useDropzone } from "react-dropzone";
+
+const questions = [
+  {
+    id: 1,
+    type: "text",
+    text: "Enter your name:",
+  },
+  {
+    id: 2,
+    type: "single-choice",
+    text: "What is your favorite color?",
+    options: ["Red", "Blue", "Green", "Yellow"],
+  },
+  {
+    id: 3,
+    type: "multi-choice",
+    text: "Select your hobbies:",
+    options: ["Reading", "Gaming", "Cooking", "Traveling"],
+  },
+  {
+    id: 4,
+    type: "video-audio",
+    text: "Record a video or audio response:",
+  },
+  {
+    id: 5,
+    type: "photo",
+    text: "Upload a photo:",
+  },
+];
+
+function App() {
+  const [responses, setResponses] = useState({});
+
+  const { status, startRecording, stopRecording, mediaBlobUrl } =
+    useReactMediaRecorder({
+      video: true, // Enable video recording
+      audio: true, // Enable audio recording
+      onStop: (blobUrl) => {
+        setResponses({ ...responses, "video-audio": blobUrl });
+      },
+    });
+
+  const onDrop = (acceptedFiles: any) => {
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      const blobUrl = URL.createObjectURL(file);
+      setResponses({ ...responses, photo: blobUrl });
+    }
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: "image/*",
+  });
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+    <div className="App">
+      <h1>Questionnaire</h1>
+      <form>
+        {questions.map((question) => (
+          <div key={question.id}>
+            <p>{question.text}</p>
+            {question.type === "text" && <input type="text" />}
+            {question.type === "single-choice" && (
+              <select>
+                {question.options?.map((option, index) => (
+                  <option key={index} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            )}
+            {question.type === "multi-choice" && (
+              <div>
+                {question.options?.map((option, index) => (
+                  <label key={index}>
+                    <input type="checkbox" value={option} /> {option}
+                  </label>
+                ))}
+              </div>
+            )}
+            {question.type === "video-audio" && (
+              <div>
+                {status === "idle" && (
+                  <button onClick={startRecording}>Start Recording</button>
+                )}
+                {status === "recording" && (
+                  <button onClick={stopRecording}>Stop Recording</button>
+                )}
+                {mediaBlobUrl && (
+                  <video controls src={mediaBlobUrl} width="300" height="200" />
+                )}
+              </div>
+            )}
+            {question.type === "photo" && (
+              <div {...getRootProps()} className="dropzone">
+                <input {...getInputProps()} />
+                <p>Drag 'n' drop a photo here, or click to select one</p>
+                {responses.photo && (
+                  <img src={responses.photo} alt="Uploaded" width="200" />
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  );
 }
+
+export default App;
